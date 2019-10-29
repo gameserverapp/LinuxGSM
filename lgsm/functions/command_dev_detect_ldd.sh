@@ -1,52 +1,56 @@
 #!/bin/bash
 # command_dev_detect_ldd.sh function
 # Author: Daniel Gibbs
-# Website: https://gameservermanagers.com
+# Website: https://linuxgsm.com
 # Description: Automatically detects required deps using ldd.
 # Can check a file or directory recursively.
 
-echo "================================="
-echo "Shared Object dependencies Checker"
-echo "================================="
+local commandname="DETECT-LDD"
+local commandaction="Detect-LDD"
+local function_selfname="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-if [ -z "${filesdir}" ]; then
-	dir="$(dirname $(readlink -f "${BASH_SOURCE[0]}"))"
+echo -e "================================="
+echo -e "Shared Object dependencies Checker"
+echo -e "================================="
+
+if [ -z "${serverfiles}" ]; then
+	dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 fi
 
-if [ -d "${filesdir}" ]; then
-	echo "Checking directory: "
-	echo "${filesdir}"
-elif [ -f "${filesdir}" ]; then
-	echo "Checking file: "
-	echo "${filesdir}"
+if [ -d "${serverfiles}" ]; then
+	echo -e "Checking directory: "
+	echo -e "${serverfiles}"
+elif [ -f "${serverfiles}" ]; then
+	echo -e "Checking file: "
+	echo -e "${serverfiles}"
 fi
-echo ""
+echo -e ""
 
-files=$(find "${filesdir}" | wc -l)
-find "${filesdir}" -type f -print0 |
+files=$(find "${serverfiles}" | wc -l)
+find "${serverfiles}" -type f -print0 |
 while IFS= read -r -d $'\0' line; do
-	#ldd -v $line 2>/dev/null|grep "=>" >>"${tmpdir}/detect_ldd.tmp"
-	if [ -n "$(ldd $line 2>/dev/null |grep -v "not a dynamic executable")" ]; then
-		echo "$line" >> "${tmpdir}/detect_ldd.tmp"
-		ldd $line 2>/dev/null |grep -v "not a dynamic executable" >> "${tmpdir}/detect_ldd.tmp"
-
-		if [ -n "$(ldd $line 2>/dev/null |grep -v "not a dynamic executable"|grep "not found")" ]; then
-			echo "$line" >> "${tmpdir}/detect_ldd_not_found.tmp"
-			ldd $line 2>/dev/null |grep -v "not a dynamic executable"|grep "not found" >> "${tmpdir}/detect_ldd_not_found.tmp"
+	if ldd "${line}" 2>/dev/null | grep -v "not a dynamic executable"
+	then
+		echo -e "${line}" >> "${tmpdir}/detect_ldd.tmp"
+		ldd "${line}" 2>/dev/null | grep -v "not a dynamic executable" >> "${tmpdir}/detect_ldd.tmp"
+		if ldd "${line}" 2>/dev/null | grep -v "not a dynamic executable" | grep "not found"
+		then
+			echo -e "${line}" >> "${tmpdir}/detect_ldd_not_found.tmp"
+			ldd "${line}" 2>/dev/null | grep -v "not a dynamic executable" | grep "not found" >> "${tmpdir}/detect_ldd_not_found.tmp"
 		fi
 	fi
 	echo -n "$i / $files" $'\r'
 	((i++))
 done
-echo ""
-echo ""
-echo "All"
-echo "================================="
+echo -e ""
+echo -e ""
+echo -e "All"
+echo -e "================================="
 cat "${tmpdir}/detect_ldd.tmp"
 
-echo ""
-echo "Not Found"
-echo "================================="
+echo -e ""
+echo -e "Not Found"
+echo -e "================================="
 cat "${tmpdir}/detect_ldd_not_found.tmp"
 
 rm "${tmpdir}/detect_ldd.tmp"

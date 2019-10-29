@@ -1,30 +1,30 @@
 #!/bin/bash
 # LinuxGSM compress_unreal2_maps.sh function
 # Author: Daniel Gibbs
-# Website: https://gameservermanagers.com
+# Website: https://linuxgsm.com
 # Description: Compresses unreal maps.
 
 local commandaction="Unreal Map Compressor"
-local function_selfname="$(basename $(readlink -f "${BASH_SOURCE[0]}"))"
+local function_selfname="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"
 
 check.sh
 fn_print_header
-echo "Will compress all maps in:"
-echo ""
+echo -e "Will compress all maps in:"
+echo -e ""
 pwd
-echo ""
-echo "Compressed maps saved to:"
-echo ""
-echo "${compressedmapsdir}"
-echo ""
+echo -e ""
+echo -e "Compressed maps saved to:"
+echo -e ""
+echo -e "${compressedmapsdir}"
+echo -e ""
 if ! fn_prompt_yn "Start compression?" Y; then
 	echo Exiting; return
 fi
 mkdir -pv "${compressedmapsdir}" > /dev/null 2>&1
-rm -rfv "${filesdir}/Maps/"*.ut2.uz2
-cd "${systemdir}"
-for map in "${filesdir}/Maps/"*; do
+rm -rfv "${serverfiles}/Maps/"*.ut2.uz2
+cd "${systemdir}" || exit
+for map in "${serverfiles}/Maps/"*; do
 	./ucc-bin compress "${map}" --nohomedir
 done
-mv -fv "${filesdir}/Maps/"*.ut2.uz2 "${compressedmapsdir}"
+mv -fv "${serverfiles}/Maps/"*.ut2.uz2 "${compressedmapsdir}"
 core_exit.sh

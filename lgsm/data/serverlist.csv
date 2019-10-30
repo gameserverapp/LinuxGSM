@@ -3,6 +3,8 @@ ahl2,ahl2server,Action: Source
 arma3,arma3server,ARMA 3
 sdtd,sdtdserver,7 Days to Die
 ark,arkserver,ARK: Survival Evolved
+sotf,sotfserver,ARK: Survival of the Fittest
+atlas,atlasserver,ATLAS
 bo,boserver,Ballistic Overkill
 bf1942,bf1942server,Battlefield 1942
 bd,bdserver,Base Defense

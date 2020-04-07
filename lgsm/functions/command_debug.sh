@@ -4,14 +4,14 @@
 # Website: https://linuxgsm.com
 # Description: Runs the server without tmux and directly from the terminal.
 
-local commandname="DEBUG"
+local modulename="DEBUG"
 local commandaction="Debug"
-local function_selfname="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"
+local function_selfname=$(basename "$(readlink -f "${BASH_SOURCE[0]}")")
 
 # Trap to remove lockfile on quit.
 fn_lockfile_trap(){
 	# Remove lockfile.
-	rm -f "${rootdir}/${lockselfname}"
+	rm -f "${lockdir:?}/${selfname}.lock"
 	# resets terminal. Servers can sometimes mess up the terminal on exit.
 	reset
 	fn_print_ok_nl "Closing debug"
@@ -37,7 +37,7 @@ fn_print_header
 	echo -e "${lightblue}Free Disk:\t\t${default}${availspace}"
 } | column -s $'\t' -t
 # glibc required.
-if [ -n "${glibc}" ]; then
+if [ "${glibc}" ]; then
 	if [ "${glibc}" == "null" ]; then
 		# Glibc is not required.
 		:
@@ -57,25 +57,17 @@ else
 	echo -e "${lightblue}Server IP:\t${default}${ip}:${port}"
 fi
 # External server IP.
-if [ -n "${extip}" ]; then
+if [ "${extip}" ]; then
 	if [ "${ip}" != "${extip}" ]; then
 		echo -e "${lightblue}Internet IP:\t${default}${extip}:${port}"
 	fi
 fi
-# Listed on Master Server.
-if [ "${displaymasterserver}" ];then
-	if [ "${displaymasterserver}" == "true" ];then
-		echo -e "${lightblue}Master Server:\t${green}${displaymasterserver}${default}"
-	else
-		echo -e "${lightblue}Master Server:\t${red}${displaymasterserver}${default}"
-	fi
-fi
 # Server password.
-if [ -n "${serverpassword}" ]; then
+if [ "${serverpassword}" ]; then
 	echo -e "${lightblue}Server password:\t${default}${serverpassword}"
 fi
 echo -e "${lightblue}Start parameters:${default}"
-if [ "${engine}" == "source" ]||[ "${engine}" == "goldsource" ]; then
+if [ "${engine}" == "source" ]||[ "${engine}" == "goldsrc" ]; then
 	echo -e "${executable} ${parms} -debug"
 else
 	echo -e "${executable} ${parms}"
@@ -83,10 +75,10 @@ fi
 echo -e ""
 echo -e "Use for identifying server issues only!"
 echo -e "Press CTRL+c to drop out of debug mode."
-fn_print_warning_nl "If ${servicename} is already running it will be stopped."
+fn_print_warning_nl "If ${selfname} is already running it will be stopped."
 echo -e ""
 if ! fn_prompt_yn "Continue?" Y; then
-	echo Exiting; return
+	return
 fi
 
 fn_print_info_nl "Stopping any running servers"
@@ -98,15 +90,15 @@ fn_script_log_info "Starting debug"
 fn_print_ok_nl "Starting debug"
 
 # Create lockfile.
-date '+%s' > "${rootdir}/${lockselfname}"
+date '+%s' > "${lockdir}/${selfname}.lock"
 fn_script_log_info "Lockfile generated"
-fn_script_log_info "${rootdir}/${lockselfname}"
+fn_script_log_info "${lockdir}/${selfname}.lock"
 # trap to remove lockfile on quit.
 trap fn_lockfile_trap INT
 
 cd "${executabledir}" || exit
 # Note: do not add double quotes to ${executable} ${parms}.
-if [ "${engine}" == "source" ]||[ "${engine}" == "goldsource" ]; then
+if [ "${engine}" == "source" ]||[ "${engine}" == "goldsrc" ]; then
 	${executable} ${parms} -debug
 elif [ "${engine}" == "realvirtuality" ]; then
 	# Arma3 requires semicolons in the module list, which need to
@@ -123,4 +115,5 @@ fn_print_dots "Stopping debug"
 fn_print_ok_nl "Stopping debug"
 # remove trap.
 trap - INT
+
 core_exit.sh

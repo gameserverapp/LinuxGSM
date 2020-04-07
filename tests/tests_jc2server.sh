@@ -1,7 +1,7 @@
 #!/bin/bash
 # Project: Game Server Managers - LinuxGSM
 # Author: Daniel Gibbs
-# License: MIT License, Copyright (c) 2019 Daniel Gibbs
+# License: MIT License, Copyright (c) 2020 Daniel Gibbs
 # Purpose: Travis CI Tests: Just Cause 2 | Linux Game Server Management Script
 # Contributors: https://linuxgsm.com/contrib
 # Documentation: https://docs.linuxgsm.com
@@ -20,22 +20,20 @@ if [ -f ".dev-debug" ]; then
 	set -x
 fi
 
-version="v19.9.0"
+version="v20.1.5"
 shortname="jc2"
 gameservername="jc2server"
-rootdir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-selfname="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"
-servicename="${selfname}"
-lockselfname=".${servicename}.lock"
+rootdir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+selfname=$(basename "$(readlink -f "${BASH_SOURCE[0]}")")
 lgsmdir="${rootdir}/lgsm"
 logdir="${rootdir}/log"
 lgsmlogdir="${logdir}/lgsm"
 steamcmddir="${rootdir}/steamcmd"
 serverfiles="${rootdir}/serverfiles"
 functionsdir="${lgsmdir}/functions"
-libdir="${lgsmdir}/lib"
 tmpdir="${lgsmdir}/tmp"
 datadir="${lgsmdir}/data"
+lockdir="${lgsmdir}/lock"
 serverlist="${datadir}/serverlist.csv"
 serverlistmenu="${datadir}/serverlistmenu.csv"
 configdir="${lgsmdir}/config-lgsm"
@@ -48,7 +46,7 @@ if [ ! -v TRAVIS ]; then
 	TRAVIS_BRANCH="develop"
 	TRAVIS_BUILD_DIR="${rootdir}"
 else
-	servicename="travis"
+	selfname="travis"
 	travistest="1"
 fi
 
@@ -61,7 +59,7 @@ githubbranch="${TRAVIS_BRANCH}"
 
 # Core function that is required first.
 core_functions.sh(){
-	functionfile="${FUNCNAME}"
+	functionfile="${FUNCNAME[0]}"
 	fn_bootstrap_fetch_file_github "lgsm/functions" "core_functions.sh" "${functionsdir}" "chmodx" "run" "noforcedl" "nomd5"
 }
 
@@ -80,14 +78,12 @@ fn_bootstrap_fetch_file(){
 		if [ ! -d "${local_filedir}" ]; then
 			mkdir -p "${local_filedir}"
 		fi
-		# Defines curl path.
-		curlpath=$(command -v curl 2>/dev/null)
 
 		# If curl exists download file.
-		if [ "$(basename "${curlpath}")" == "curl" ]; then
+		if [ "$(command -v curl 2>/dev/null)" ]; then
 			# Trap to remove part downloaded files.
 			echo -en "    fetching ${local_filename}...\c"
-			curlcmd=$(${curlpath} -s --fail -L -o "${local_filedir}/${local_filename}" "${remote_fileurl}" 2>&1)
+			curlcmd=$(curl -s --fail -L -o "${local_filedir}/${local_filename}" "${remote_fileurl}" 2>&1)
 			local exitcode=$?
 			if [ ${exitcode} -ne 0 ]; then
 				echo -e "FAIL"
@@ -112,6 +108,7 @@ fn_bootstrap_fetch_file(){
 	if [ -f "${local_filedir}/${local_filename}" ]; then
 		# Run file if run is set.
 		if [ "${run}" == "run" ]; then
+			# shellcheck source=/dev/null
 			source "${local_filedir}/${local_filename}"
 		fi
 	fi
@@ -136,14 +133,13 @@ fn_bootstrap_fetch_file_github(){
 # Installer menu.
 
 fn_print_center() {
-	columns="$(tput cols)"
-	line="$@"
+	columns=$(tput cols)
+	line="$*"
 	printf "%*s\n" $(( (${#line} + columns) / 2)) "${line}"
 }
 
 fn_print_horizontal(){
-	char="${1:-=}"
-	printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' "${char}"
+	printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' "="
 }
 
 # Bash menu.
@@ -163,7 +159,7 @@ fn_install_menu_bash() {
 	done < "${options}"
 	menu_options+=( "Cancel" )
 	select option in "${menu_options[@]}"; do
-		if [ -n "${option}" ]&&[ "${option}" != "Cancel" ]; then
+		if [ "${option}" ]&&[ "${option}" != "Cancel" ]; then
 			eval "$resultvar=\"${option/%\ */}\""
 		fi
 		break
@@ -204,7 +200,7 @@ fn_install_menu() {
 	options=$4
 	# Get menu command.
 	for menucmd in whiptail dialog bash; do
-		if [ -x "$(command -v "${menucmd}")" ]; then
+		if [ "$(command -v "${menucmd}")" ]; then
 			menucmd=$(command -v "${menucmd}")
 			break
 		fi
@@ -309,7 +305,7 @@ if [ "${shortname}" == "core" ]; then
 			echo -e "result: ${result}"
 			echo -e "gameservername: ${gameservername}"
 		fi
-	elif [ -n "${userinput}" ]; then
+	elif [ "${userinput}" ]; then
 		fn_server_info
 		if [ "${userinput}" == "${gameservername}" ]||[ "${userinput}" == "${gamename}" ]||[ "${userinput}" == "${shortname}" ]; then
 			fn_install_file
@@ -366,11 +362,11 @@ else
 			source "${configdirserver}/common.cfg"
 		fi
 		# Load the instance.cfg config. If missing download it.
-		if [ ! -f "${configdirserver}/${servicename}.cfg" ]; then
-			fn_fetch_config "lgsm/config-default/config-lgsm" "instance-template.cfg" "${configdirserver}" "${servicename}.cfg" "nochmodx" "norun" "noforcedl" "nomd5"
-			source "${configdirserver}/${servicename}.cfg"
+		if [ ! -f "${configdirserver}/${selfname}.cfg" ]; then
+			fn_fetch_config "lgsm/config-default/config-lgsm" "instance-template.cfg" "${configdirserver}" "${selfname}.cfg" "nochmodx" "norun" "noforcedl" "nomd5"
+			source "${configdirserver}/${selfname}.cfg"
 		else
-			source "${configdirserver}/${servicename}.cfg"
+			source "${configdirserver}/${selfname}.cfg"
 		fi
 
 		# Load the linuxgsm.sh in to tmpdir. If missing download it.
@@ -480,6 +476,8 @@ fn_test_result_na(){
 	echo -e "Actual result: N/A"
 	fn_print_fail_nl "TEST N/A"
 }
+
+sleeptime="0"
 
 echo -e "================================="
 echo -e "Travis CI Tests"
@@ -830,7 +828,7 @@ echo -e "Command: ./jc2server update"
 requiredstatus="OFFLINE"
 fn_setstatus
 fn_print_info_nl "removed appmanifest_${appid}.acf."
-rm --verbose "${serverfiles}/steamapps/appmanifest_${appid}.acf"
+rm --verbose "${serverfiles:?}/steamapps/appmanifest_${appid}.acf"
 (
 	exec 5>"${TRAVIS_BUILD_DIR}/dev-debug.log"
 	BASH_XTRACEFD="5"
@@ -968,7 +966,7 @@ echo -e "Command: ./${gameservername} monitor"
 requiredstatus="OFFLINE"
 fn_setstatus
 fn_print_info_nl "creating lockfile."
-date '+%s' > "${rootdir}/${lockselfname}"
+date '+%s' > "${lockdir}/${selfname}.lock"
 (
 	exec 5>"${TRAVIS_BUILD_DIR}/dev-debug.log"
 	BASH_XTRACEFD="5"
@@ -1173,6 +1171,8 @@ echo -e "Using: ${gamename}"
 echo -e "================================="
 requiredstatus="OFFLINE"
 fn_setstatus
-fn_print_info "Tidying up directories."
-rm -rfv "${serverfiles}"
+if [ ! -v TRAVIS ]; then
+	fn_print_info "Tidying up directories."
+	rm -rfv "${serverfiles:?}"
+fi
 core_exit.sh

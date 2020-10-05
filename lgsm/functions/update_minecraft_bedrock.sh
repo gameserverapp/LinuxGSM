@@ -9,10 +9,10 @@ local commandaction="Update"
 local function_selfname=$(basename "$(readlink -f "${BASH_SOURCE[0]}")")
 
 fn_update_minecraft_dl(){
-	latestmcbuildurl=$(curl -s "https://www.minecraft.net/en-us/download/server/bedrock/" | grep -o 'https://minecraft.azureedge.net/bin-linux/[^"]*zip')
-	fn_fetch_file "${latestmcbuildurl}" "${tmpdir}" "bedrock_server.${remotebuild}.zip"
+	latestmcbuildurl=$(curl -Ls "https://www.minecraft.net/en-us/download/server/bedrock/" | grep -o 'https://minecraft.azureedge.net/bin-linux/[^"]*zip')
+	fn_fetch_file "${latestmcbuildurl}" "" "" "" "${tmpdir}" "bedrock_server.${remotebuild}.zip"
 	echo -e "Extracting to ${serverfiles}...\c"
-	if [ "${installer}" == "1" ]; then
+	if [ "${firstcommandname}" == "INSTALL" ]; then
 		unzip -oq "${tmpdir}/bedrock_server.${remotebuild}.zip" -x "server.properties" -d "${serverfiles}"
 	else
 		unzip -oq "${tmpdir}/bedrock_server.${remotebuild}.zip" -x "permissions.json" "server.properties" "whitelist.json" -d "${serverfiles}"
@@ -26,6 +26,7 @@ fn_update_minecraft_dl(){
 	else
 		fn_print_fail_eol_nl
 		fn_script_log_fatal "Extracting to ${serverfiles}"
+		fn_clear_tmp
 		core_exit.sh
 	fi
 }

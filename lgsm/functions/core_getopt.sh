@@ -4,7 +4,7 @@
 # Website: https://linuxgsm.com
 # Description: getopt arguments.
 
-local function_selfname=$(basename "$(readlink -f "${BASH_SOURCE[0]}")")
+functionselfname="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"
 
 ### Define all commands here.
 ## User commands | Trigger commands | Description
@@ -36,8 +36,8 @@ cmd_mods_update=( "mu;mods-update" "command_mods_update.sh" "Update installed mo
 # Server specific.
 cmd_change_password=( "pw;change-password" "command_ts3_server_pass.sh" "Change TS3 serveradmin password." )
 cmd_install_default_resources=( "ir;install-default-resources" "command_install_resources_mta.sh" "Install the MTA default resources." )
-cmd_wipe=( "wi;wipe" "command_wipe.sh" "Wipe your main game server data." )
-cmd_wipeall=( "wa;wipeall" "wipeall=1; command_wipe.sh" "Wipe your game server data and blueprints." )
+cmd_wipe=( "w;wipe;wi" "command_wipe.sh" "Map assets are wiped and blueprints are kept." )
+cmd_full_wipe=( "fw;full-wipe;wa;wipeall" "fullwipe=1; command_wipe.sh" "Map assets and blueprints are wiped." )
 cmd_map_compressor_u99=( "mc;map-compressor" "compress_ut99_maps.sh" "Compresses all ${gamename} server maps." )
 cmd_map_compressor_u2=( "mc;map-compressor" "compress_unreal2_maps.sh" "Compresses all ${gamename} server maps." )
 cmd_install_cdkey=( "cd;server-cd-key" "install_ut2k4_key.sh" "Add your server cd key." )
@@ -61,11 +61,13 @@ currentopt=( "${cmd_start[@]}" "${cmd_stop[@]}" "${cmd_restart[@]}" "${cmd_monit
 currentopt+=( "${cmd_update_linuxgsm[@]}" )
 
 # Exclude noupdate games here.
-if [ "${engine}" != "quake" ]&&[ "${engine}" != "idtech2" ]&&[ "${engine}" != "idtech3" ]&&[ "${engine}" != "iw2.0" ]&&[ "${engine}" != "iw3.0" ]&&[ "${shortname}" != "bf1942" ]&&[ "${shortname}" != "samp" ]; then
-	currentopt+=( "${cmd_update[@]}" )
-	# force update for SteamCMD only or MTA.
-	if [ "${appid}" ]||[ "${shortname}" == "mta" ]; then
-		currentopt+=( "${cmd_force_update[@]}" )
+if [ "${shortname}" == "jk2" ]||[ "${engine}" != "idtech3" ];then
+	if [ "${shortname}" != "bf1942" ]&&[ "${shortname}" != "bfv" ]&&[ "${engine}" != "idtech2" ]&&[ "${engine}" != "iw2.0" ]&&[ "${engine}" != "iw3.0" ]&&[ "${engine}" != "quake" ]&&[ "${shortname}" != "samp" ]&&[ "${shortname}" != "ut2k4" ]&&[ "${shortname}" != "ut99" ]; then
+		currentopt+=( "${cmd_update[@]}" )
+		# force update for SteamCMD or Multi Theft Auto only.
+		if [ "${appid}" ]||[ "${shortname}" == "mta" ]; then
+			currentopt+=( "${cmd_force_update[@]}" )
+		fi
 	fi
 fi
 
@@ -94,7 +96,7 @@ fi
 
 # Unreal exclusive.
 if [ "${shortname}" == "rust" ]; then
-	currentopt+=( "${cmd_wipe[@]}" "${cmd_wipeall[@]}" )
+	currentopt+=( "${cmd_wipe[@]}" "${cmd_full_wipe[@]}" )
 fi
 if [ "${engine}" == "unreal2" ]; then
 	if [ "${shortname}" == "ut2k4" ]; then
@@ -167,14 +169,15 @@ fn_opt_usage(){
 		fi
 	done
 	} | column -s $'\t' -t
+	fn_script_log_pass "Display commands"
 	core_exit.sh
 }
 
-# Check if user commands exist and run corresponding scripts, or display script usage.
+# Check if command existw and run corresponding scripts, or display script usage.
 if [ -z "${getopt}" ]; then
 	fn_opt_usage
 fi
-# Command exists.
+# If command exists.
 for i in "${optcommands[@]}"; do
 	if [ "${i}" == "${getopt}" ] ; then
 		# Seek and run command.
@@ -185,8 +188,10 @@ for i in "${optcommands[@]}"; do
 				if [ "$(echo -e "${currentopt[index]}" | awk -F ';' -v x=${currcmdindex} '{ print $x }')" == "${getopt}" ]; then
 					# Run command.
 					eval "${currentopt[index+1]}"
+					# Exit should occur in modules. Should this not happen print an error
+					fn_print_error2_nl "Command did not exit correctly: ${getopt}"
+					fn_script_log_error "Command did not exit correctly: ${getopt}"
 					core_exit.sh
-					break
 				fi
 			done
 		done
@@ -194,7 +199,7 @@ for i in "${optcommands[@]}"; do
 done
 
 # If we're executing this, it means command was not found.
-echo -e "${red}Unknown command${default}: $0 ${getopt}"
-exitcode=2
+fn_print_error2_nl "Unknown command: $0 ${getopt}"
+fn_script_log_error "Unknown command: $0 ${getopt}"
 fn_opt_usage
 core_exit.sh

@@ -5,6 +5,10 @@
 # Description: Defines all functions to allow download and execution of functions using fn_fetch_function.
 # This function is called first before any other function. Without this file other functions will not load.
 
+functionselfname="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+modulesversion="v20.5.0"
+
 # Core
 
 core_dl.sh(){
@@ -233,6 +237,11 @@ functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
 
+check_version.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
 # Compress
 
 compress_unreal2_maps.sh(){
@@ -301,7 +310,22 @@ functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
 
+fix_av.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
 fix_arma3.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
+fix_bo.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
+fix_cmw.sh(){
 functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
@@ -317,6 +341,11 @@ fn_fetch_function
 }
 
 fix_ges.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
+fix_hw.sh(){
 functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
@@ -376,6 +405,11 @@ functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
 
+fix_st.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
 fix_steamcmd.sh(){
 functionfile="${FUNCNAME[0]}"
 fn_fetch_function
@@ -407,6 +441,11 @@ fn_fetch_function
 }
 
 fix_sof2.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
+fix_squad.sh(){
 functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
@@ -520,13 +559,18 @@ functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
 
+alert_rocketchat.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
 alert_slack.sh(){
 functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
 # Logs
 
-logs.sh(){
+core_logs.sh(){
 functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
@@ -581,6 +625,11 @@ fn_fetch_function
 }
 
 update_factorio.sh(){
+functionfile="${FUNCNAME[0]}"
+fn_fetch_function
+}
+
+update_jediknight2.sh(){
 functionfile="${FUNCNAME[0]}"
 fn_fetch_function
 }
